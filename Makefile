@@ -4,7 +4,7 @@ CFLAGS+=-O1
 LDFLAGS+=-mmcu $(TARGET)
 
 all:
-	$(CC) $(CFLAGS) -mmcu=$(TARGET) main.c spi.c -o ot.hex
+	$(CC) $(CFLAGS) -mmcu=$(TARGET) main.c -o cuckoo.hex
 
 .PHONY: flash clean
 flash: all

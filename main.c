@@ -5,19 +5,16 @@
 //#define F_CPU 8000000
 #define F_CPU 1000000
 
-//#include <avr/interrupt.h>
+
+#define SEC_PER_HALF_DAY (12 * 3600)
+#define STEPS_PER_REV (200)
+//#define SEC_TO_WAIT (SEC_PER_HALF_DAY / STEPS_PER_REV)
+#define SEC_TO_WAIT 216 
+
+
 #include <avr/io.h>
 #include <util/delay.h>
 #include <math.h>
-
-/*
-#define USI_OUT_REG	PORTA	//!< USI port output register.
-#define USI_IN_REG	PINA	//!< USI port input register.
-#define USI_DIR_REG	DDRA	//!< USI port direction register.
-#define USI_CLOCK_PIN	PA4	//!< USI clock I/O pin.
-#define USI_DATAIN_PIN	PA6	//!< USI data input pin.
-#define USI_DATAOUT_PIN	PA5	//!< USI data output pin.
-*/
 
 typedef enum {
 	OT_PORTA,
@@ -109,7 +106,8 @@ int stepper_step(const stepper_t* m)
 			}
 		}
 
-		_delay_ms(elapsed_ms += 3);
+		_delay_ms(3);
+		elapsed_ms += 3;
 	}
 
 	return elapsed_ms;
@@ -154,22 +152,25 @@ int main(void)
 	{
 		step_deltas[0] = 1;
 
-		int elapsed = 0;
+		long elapsed_ms = 0;
 
 		for (int i = sizeof(steppers) / sizeof(stepper_t*); i--;)
 		{
 			if (step_deltas[i])
 			{
 				stepper_dir(steppers[i], step_deltas[i]);
-				elapsed += stepper_step(steppers[i]);
+				elapsed_ms += stepper_step(steppers[i]);
 			}
 			
 			if (step_deltas[i] > 0) { step_deltas[i]--; }
 			else if (step_deltas[i] < 0) { step_deltas[i]++; }
 		}
-
-		const int steps_per_rev = 200;
-		_delay_ms((((12 * 3600) / steps_per_rev) * 1000) - elapsed_ms);
+		unsigned long wait_time_ms = (SEC_TO_WAIT * 1000) - elapsed_ms;
+		
+		for (; wait_time_ms--;)
+		{
+			_delay_ms(1);
+		}
 	}
 
 	PORTA = 0;
